@@ -29,8 +29,7 @@ ecdsa-core = { version = "=0.13.0-pre", package = "ecdsa", default-features = fa
 hex-literal = "0.3"
 proptest = "1.0"
 rand_core = { version = "0.6", features = ["getrandom"] }
-num-bigint = "0.4"
-num-traits = "0.2"
+crypto-bigint = "0.2"
 
 [features]
 default = ["arithmetic", "ecdsa", "pkcs8", "std"]

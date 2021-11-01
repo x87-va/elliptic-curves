@@ -569,11 +569,10 @@ name = "p256"
 version = "0.10.0-pre"
 dependencies = [
  "blobby",
+ "crypto-bigint",
  "ecdsa",
  "elliptic-curve",
  "hex-literal",
- "num-bigint",
- "num-traits",
  "proptest",
  "rand_core",
  "sha2",

@@ -629,6 +629,7 @@ mod tests {
         assert!(!high);
 
         let m = Scalar::modulus_as_biguint();
+
         let m_by_2 = &m >> 1;
 
         // M / 2 is not high

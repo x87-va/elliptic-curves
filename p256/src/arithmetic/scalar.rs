@@ -27,9 +27,6 @@ use {crate::ScalarBits, elliptic_curve::group::ff::PrimeFieldBits};
 #[cfg(feature = "digest")]
 use ecdsa_core::{elliptic_curve::consts::U32, hazmat::FromDigest, signature::digest::Digest};
 
-#[cfg(test)]
-use num_bigint::{BigUint, ToBigUint};
-
 /// Array containing 4 x 64-bit unsigned integers.
 // TODO(tarcieri): replace this entirely with `U256`
 type U64x4 = [u64; 4];
@@ -289,12 +286,6 @@ impl Scalar {
     pub fn is_high(&self) -> Choice {
         // self.0.ct_gt(&U256::from_uint_array(FRAC_MODULUS_2))
         self.0.ct_gt(&FRAC_MODULUS_2)
-    }
-
-    /// Returns the scalar modulus as a `BigUint` object.
-    #[cfg(test)]
-    pub fn modulus_as_biguint() -> BigUint {
-        Self::one().neg().to_biguint().unwrap() + 1.to_biguint().unwrap()
     }
 
     /// Determine if this `Scalar` is zero.
@@ -807,10 +798,8 @@ pub(crate) const fn u256_to_u64x4(u256: U256) -> U64x4 {
 #[cfg(test)]
 mod tests {
     use super::Scalar;
-    use crate::arithmetic::util::{biguint_to_bytes, bytes_to_biguint};
     use crate::{FieldBytes, SecretKey};
     use elliptic_curve::group::ff::{Field, PrimeField};
-    use num_bigint::{BigUint, ToBigUint};
 
     #[test]
     fn from_to_bytes_roundtrip() {
@@ -895,38 +884,24 @@ mod tests {
         assert_eq!(minus_one, scalar_bits);
     }
 
-    impl From<&BigUint> for Scalar {
-        fn from(x: &BigUint) -> Self {
-            debug_assert!(x < &Scalar::modulus_as_biguint());
-            let bytes = biguint_to_bytes(x);
-            Self::from_repr(bytes.into()).unwrap()
-        }
-    }
-
-    impl From<BigUint> for Scalar {
-        fn from(x: BigUint) -> Self {
-            Self::from(&x)
-        }
-    }
-
-    impl ToBigUint for Scalar {
-        fn to_biguint(&self) -> Option<BigUint> {
-            Some(bytes_to_biguint(self.to_bytes().as_ref()))
-        }
-    }
-
     #[test]
     fn is_high() {
+        use core::ops::Add;
+        use elliptic_curve::bigint::U256;
+
         // 0 is not high
         let high: bool = Scalar::zero().is_high().into();
         assert!(!high);
 
         // 1 is not high
-        let one = 1.to_biguint().unwrap();
-        let high: bool = Scalar::from(&one).is_high().into();
+        let one = U256::ONE;
+        let high: bool = Scalar(one).is_high().into();
         assert!(!high);
 
-        let m = Scalar::modulus_as_biguint();
+        println!("{:?}", one);
+
+        // let m = Scalar::modulus_as_biguint();
+        let m = U256::ONE.neg() + U256::from(1);
         let m_by_2 = &m >> 1;
 
         // M / 2 is not high
@@ -934,11 +909,12 @@ mod tests {
         assert!(!high);
 
         // M / 2 + 1 is high
-        let high: bool = Scalar::from(&m_by_2 + &one).is_high().into();
+        let high: bool = Scalar(m_by_2 + one).is_high().into();
         assert!(high);
 
         // MODULUS - 1 is high
-        let high: bool = Scalar::from(&m - &one).is_high().into();
+        let high: bool = Scalar::from(m - one).is_high().into();
         assert!(high);
     }
+
 }
